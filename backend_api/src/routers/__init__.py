@@ -1,5 +1,5 @@
 # Export routers for easy imports
-from . import auth, projects, estimates, jobs, proposals, invoices, receipts, contracts, marketing, reports, integrations
+from . import auth, projects, estimates, jobs, proposals, invoices, receipts, contracts, marketing, reports, integrations, plaid
 
 __all__ = [
     "auth",
@@ -13,4 +13,5 @@ __all__ = [
     "marketing",
     "reports",
     "integrations",
+    "plaid",
 ]

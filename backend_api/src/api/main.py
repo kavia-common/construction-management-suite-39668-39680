@@ -25,6 +25,7 @@ from src.routers import (
     marketing,
     reports,
     integrations,
+    plaid,
 )
 
 # Define OpenAPI tags for grouping
@@ -41,6 +42,7 @@ openapi_tags = [
     {"name": "Marketing", "description": "Leads, campaigns, and outreach."},
     {"name": "Reports", "description": "Reporting and analytics."},
     {"name": "Integrations", "description": "3rd-party integrations & webhooks."},
+    {"name": "Plaid", "description": "Banking/finance data via Plaid (Link, token exchange, accounts, transactions)."},
 ]
 
 description = (
@@ -154,6 +156,7 @@ app.include_router(contracts.router, prefix="/contracts", tags=["Contracts"])
 app.include_router(marketing.router, prefix="/marketing", tags=["Marketing"])
 app.include_router(reports.router, prefix="/reports", tags=["Reports"])
 app.include_router(integrations.router, prefix="/integrations", tags=["Integrations"])
+app.include_router(plaid.router, prefix="/plaid", tags=["Plaid"])
 
 # Startup checks
 @app.on_event("startup")

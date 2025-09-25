@@ -42,3 +42,4 @@ uvloop==0.21.0
 watchfiles==1.0.5
 websockets==15.0.1
 supabase==2.9.1
+plaid-python==21.0.0
