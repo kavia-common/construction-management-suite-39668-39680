@@ -51,7 +51,7 @@ class PublicTokenExchangeResponse(BaseModel):
 @router.post("/item/public_token/exchange", summary="Exchange public token", description="Exchange a public_token from Link for an access_token and item_id.", response_model=PublicTokenExchangeResponse)
 def exchange_public_token(payload: PublicTokenExchangeRequest):
     """Exchange a public token for an access token and store it for the user."""
-    svc = get_plaid_service()
+    svc = plaid_client.get_plaid_service()
     try:
         data = svc.exchange_public_token(payload.public_token)
         access_token = data.get("access_token")
