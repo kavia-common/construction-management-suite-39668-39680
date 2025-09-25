@@ -17,7 +17,7 @@ Open docs at http://localhost:3001/docs (Ocean Professional themed Swagger UI).
 
 ## Supabase
 
-- Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `.env` to enable authentication endpoints.
+- Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `.env` to enable authentication endpoints (these are required for real Supabase auth; without them, the endpoints return mock responses).
 - Frontend should set emailRedirectTo using the SITE_URL environment for signup flows.
 
 ## Database
