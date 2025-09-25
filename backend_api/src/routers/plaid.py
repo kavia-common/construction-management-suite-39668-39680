@@ -4,7 +4,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, status, Query
 from pydantic import BaseModel, Field
 
-from src.core.plaid_client import get_plaid_service
+import src.core.plaid_client as plaid_client
 
 router = APIRouter()
 
@@ -28,7 +28,7 @@ class LinkTokenResponse(BaseModel):
 @router.post("/link/token/create", summary="Create Plaid Link token", description="Create a Plaid Link token for initializing the client side Link flow.", response_model=LinkTokenResponse)
 def create_link_token(payload: LinkTokenRequest):
     """Create and return a Plaid Link token for the specified user."""
-    svc = get_plaid_service()
+    svc = plaid_client.get_plaid_service()
     try:
         data = svc.create_link_token(user_id=payload.user_id, products=payload.products)
         return LinkTokenResponse(link_token=data.get("link_token", ""), expiration=data.get("expiration"))
