@@ -2,7 +2,7 @@
 
 This backend integrates with Plaid to access banking/finance data. It provides endpoints for Plaid Link initialization, public token exchange, account retrieval, and transaction syncing.
 
-Environment variables (required):
+Environment variables (required for live Plaid):
 - PLAID_CLIENT_ID
 - PLAID_SECRET
 
@@ -10,6 +10,15 @@ Optional:
 - PLAID_ENV (sandbox | development | production, default sandbox)
 - PLAID_HOST (override host, default based on PLAID_ENV)
 - APP_NAME (displayed in Link creation, defaults to "Construction Management Suite")
+
+Frontend-style env fallback:
+- REACT_APP_PLAID_CLIENT_ID
+- REACT_APP_PLAID_SECRET
+- REACT_APP_PLAID_ENV
+The backend automatically reads these if PLAID_* are not set, to prevent misconfiguration during integration testing.
+
+Host configuration:
+- With plaid-python >= 21, the SDK expects a Plaid Environment constant (Sandbox, Development, Production). The backend now maps PLAID_ENV to these constants when available to avoid runtime errors. If not available, it falls back to URL hosts.
 
 Endpoints (under /plaid):
 - POST /plaid/link/token/create
@@ -34,7 +43,7 @@ Notes
 - If Plaid SDK or credentials are not configured, endpoints return mock responses for development.
 
 Run locally
-1) Create .env from .env.example and set PLAID_* values.
+1) Create .env from .env.example and set PLAID_* values (or REACT_APP_* fallbacks).
 2) pip install -r requirements.txt
 3) uvicorn src.api.main:app --reload --port 3001
 4) Visit /docs to try the endpoints.

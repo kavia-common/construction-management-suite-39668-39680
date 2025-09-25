@@ -16,6 +16,11 @@ try:
     from plaid.model.transactions_sync_request import TransactionsSyncRequest  # type: ignore
     from plaid.model.products import Products  # type: ignore
     from plaid import Configuration, ApiClient  # type: ignore
+    # Environment constants are available under plaid.Environment in recent versions
+    try:
+        from plaid import Environment as PlaidEnvironment  # type: ignore
+    except Exception:  # pragma: no cover
+        PlaidEnvironment = None  # type: ignore
 except Exception:
     plaid_api = None
     CountryCode = None
@@ -27,6 +32,7 @@ except Exception:
     Products = None
     Configuration = None
     ApiClient = None
+    PlaidEnvironment = None  # type: ignore
 
 
 logger = logging.getLogger(__name__)
@@ -34,9 +40,10 @@ logger = logging.getLogger(__name__)
 
 class PlaidSettings(BaseModel):
     """Settings specific to Plaid loaded from environment variables."""
-    client_id: str = Field(default=os.getenv("PLAID_CLIENT_ID", ""))
-    secret: str = Field(default=os.getenv("PLAID_SECRET", ""))
-    env: str = Field(default=os.getenv("PLAID_ENV", "sandbox"))
+    # Support both backend-style and frontend-style (REACT_APP_*) env variable names
+    client_id: str = Field(default=(os.getenv("PLAID_CLIENT_ID") or os.getenv("REACT_APP_PLAID_CLIENT_ID") or ""))
+    secret: str = Field(default=(os.getenv("PLAID_SECRET") or os.getenv("REACT_APP_PLAID_SECRET") or ""))
+    env: str = Field(default=(os.getenv("PLAID_ENV") or os.getenv("REACT_APP_PLAID_ENV") or "sandbox"))
     # Advanced: some SDKs use direct host override
     host: Optional[str] = Field(default=os.getenv("PLAID_HOST", None))
     # App info
@@ -52,11 +59,24 @@ class PlaidService:
     def is_configured(self) -> bool:
         return bool(plaid_api and self.settings.client_id and self.settings.secret)
 
-    def _get_base_url(self) -> str:
-        # Map env to base URL if host not given
+    def _get_env_host(self):
+        """
+        Return the appropriate host/environment for Plaid SDK.
+        - If PlaidEnvironment constants are available, return that enum.
+        - Else, fall back to a URL string (best-effort).
+        """
+        env = (self.settings.env or "sandbox").lower()
+        if PlaidEnvironment is not None:
+            if env == "production":
+                return getattr(PlaidEnvironment, "Production", None) or getattr(PlaidEnvironment, "PRODUCTION", None)
+            if env == "development":
+                return getattr(PlaidEnvironment, "Development", None) or getattr(PlaidEnvironment, "DEVELOPMENT", None)
+            # default sandbox
+            return getattr(PlaidEnvironment, "Sandbox", None) or getattr(PlaidEnvironment, "SANDBOX", None)
+
+        # Fallback to URL host if Environment constants are not available
         if self.settings.host:
             return self.settings.host
-        env = (self.settings.env or "sandbox").lower()
         if env == "production":
             return "https://production.plaid.com"
         if env == "development":
@@ -70,7 +90,7 @@ class PlaidService:
         if not self.is_configured():
             raise RuntimeError("Plaid not configured or plaid sdk missing.")
         configuration = Configuration(
-            host=self._get_base_url(),
+            host=self._get_env_host(),
             api_key={
                 "PLAID-CLIENT-ID": self.settings.client_id,
                 "PLAID-SECRET": self.settings.secret,
@@ -88,23 +108,30 @@ class PlaidService:
             return {"link_token": "mock-link-token", "expiration": (date.today() + timedelta(days=1)).isoformat()}
         try:
             _products = products or ["transactions"]
-            # Convert to SDK enum when available
-            sdk_products = []
+            # Convert to SDK enum when available; be tolerant across versions
+            sdk_products: List[Any] = []
             if Products:
-                mapping = {
-                    "transactions": Products("transactions"),
-                    "auth": Products("auth"),
-                    "identity": Products("identity"),
-                }
+                # Prefer enum attributes if present; else construct from string
                 for p in _products:
-                    if p in mapping:
-                        sdk_products.append(mapping[p])
+                    attr_name = p.upper()
+                    enum_val = getattr(Products, attr_name, None)
+                    if enum_val is None:
+                        try:
+                            enum_val = Products(p)  # type: ignore[arg-type]
+                        except Exception:
+                            enum_val = None
+                    if enum_val is not None:
+                        sdk_products.append(enum_val)
             else:
                 sdk_products = _products  # type: ignore
 
             # Country codes required by Plaid
             if CountryCode:
-                country_codes = [CountryCode("US")]
+                try:
+                    cc = getattr(CountryCode, "US", None) or CountryCode("US")
+                except Exception:
+                    cc = CountryCode("US")  # type: ignore
+                country_codes = [cc]
             else:
                 country_codes = ["US"]  # type: ignore
 
