@@ -90,7 +90,7 @@ class AccountsResponse(BaseModel):
 @router.post("/accounts/get", summary="Get accounts", description="Retrieve accounts for the user's Plaid item.", response_model=AccountsResponse)
 def get_accounts(payload: AccountsRequest):
     """Fetch accounts from Plaid for the stored access token."""
-    svc = get_plaid_service()
+    svc = plaid_client.get_plaid_service()
     user_rec = _USER_ITEM_STORE.get(payload.user_id)
     if not user_rec:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No Plaid item configured for this user.")
@@ -141,7 +141,7 @@ class TransactionsSyncResponse(BaseModel):
 @router.post("/transactions/sync", summary="Sync transactions", description="Fetch transactions using Plaid transactions/sync and store them for the user.", response_model=TransactionsSyncResponse)
 def sync_transactions(payload: TransactionsSyncRequest):
     """Sync transactions and persist in-memory for the user."""
-    svc = get_plaid_service()
+    svc = plaid_client.get_plaid_service()
     user_rec = _USER_ITEM_STORE.get(payload.user_id)
     if not user_rec:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No Plaid item configured for this user.")
